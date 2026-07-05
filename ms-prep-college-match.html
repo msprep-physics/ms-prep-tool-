@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MS Prep 대학 매칭 리포트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14213D;
+    --ink-soft:#4A5578;
+    --paper:#F7F8FA;
+    --line:#DDE2EA;
+    --reach:#C1443B;
+    --reach-bg:#FBEAE8;
+    --target:#C7861A;
+    --target-bg:#FBF1DF;
+    --safety:#1F7A55;
+    --safety-bg:#E7F4EE;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    background:
+      linear-gradient(var(--line) 1px, transparent 1px) 0 0/100% 28px,
+      var(--paper);
+    padding:28px 20px 40px;
+  }
+  .wrap{max-width:680px;margin:0 auto;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:26px;
+    line-height:1.25;
+    margin:0 0 8px;
+  }
+  .sub{
+    font-size:14px;
+    color:var(--ink-soft);
+    line-height:1.6;
+    margin-bottom:26px;
+  }
+  form{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:22px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field.full{grid-column:1/-1;}
+  label{font-size:12.5px;font-weight:600;color:var(--ink-soft);}
+  input,select{
+    font-family:'JetBrains Mono',monospace;
+    font-size:14px;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  select{font-family:'Inter',sans-serif;}
+  input:focus,select:focus{outline:2px solid var(--ink);outline-offset:1px;}
+  .hint{font-size:11px;color:var(--ink-soft);font-family:'Inter',sans-serif;}
+  button{
+    grid-column:1/-1;
+    margin-top:4px;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    padding:13px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    cursor:pointer;
+  }
+  button:disabled{opacity:0.5;cursor:not-allowed;}
+  #status{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink-soft);margin-top:14px;}
+  #results{margin-top:30px;display:none;}
+  .summary{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .summary div{
+    flex:1;
+    min-width:120px;
+    border-radius:8px;
+    padding:12px 14px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .summary .num{font-size:22px;font-weight:700;}
+  .summary .lbl{font-size:11px;letter-spacing:0.05em;text-transform:uppercase;margin-top:2px;}
+  .col-reach{background:var(--reach-bg);color:var(--reach);}
+  .col-target{background:var(--target-bg);color:var(--target);}
+  .col-safety{background:var(--safety-bg);color:var(--safety);}
+
+  .group-title{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:16px;
+    margin:22px 0 10px;
+    padding-bottom:6px;
+    border-bottom:1px dashed var(--line);
+  }
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-left-width:4px;
+    border-radius:0 8px 8px 0;
+    padding:12px 14px;
+    margin-bottom:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
+  .card .name{font-weight:600;font-size:14.5px;}
+  .card .meta{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
+  .card .comment{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:700;
+    padding:3px 8px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+  .card.reach{border-left-color:var(--reach);}
+  .card.target{border-left-color:var(--target);}
+  .card.safety{border-left-color:var(--safety);}
+  .tag.reach{background:var(--reach-bg);color:var(--reach);}
+  .tag.target{background:var(--target-bg);color:var(--target);}
+  .tag.safety{background:var(--safety-bg);color:var(--safety);}
+  .empty-note{font-size:12.5px;color:var(--ink-soft);font-style:italic;}
+
+  .disclaimer{
+    margin-top:28px;
+    padding:14px 16px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:12px;
+    line-height:1.7;
+    color:var(--ink-soft);
+  }
+  .cta{
+    margin-top:14px;
+    text-align:center;
+    font-size:13px;
+  }
+  .cta a{color:var(--ink);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">MS Prep · College Match Report</div>
+  <h1>내 성적으로 지원 가능한 대학 확인하기</h1>
+  <div class="sub">GPA와 표준화시험 점수를 입력하면 Reach / Target / Safety로 분류된 리스트를 보여드립니다. EC활동과 수상 내역은 숫자로 환산할 수 없는 정성 평가 영역이라, 아래 결과는 참고용 1차 분류입니다.</div>
+
+  <form id="matchForm">
+    <div class="field">
+      <label>비가중 GPA (4.0 만점 기준)</label>
+      <input type="number" id="gpa" step="0.01" min="0" max="4.3" placeholder="예: 3.85" required />
+    </div>
+    <div class="field">
+      <label>커리큘럼</label>
+      <select id="curriculum">
+        <option value="AP">AP 중심</option>
+        <option value="IB">IB</option>
+        <option value="A-Level">A-Level</option>
+        <option value="US_HS">미국 로컬 고교 일반</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>SAT 점수 (선택)</label>
+      <input type="number" id="sat" min="400" max="1600" placeholder="예: 1450" />
+    </div>
+    <div class="field">
+      <label>ACT 점수 (선택)</label>
+      <input type="number" id="act" min="1" max="36" placeholder="예: 32" />
+    </div>
+
+    <div class="field">
+      <label>EC 활동 수준</label>
+      <select id="ec">
+        <option value="3">전국/국제 단위 임팩트</option>
+        <option value="2" selected>지역/주 단위 리더십</option>
+        <option value="1">교내 활동 중심</option>
+        <option value="0">아직 준비 중</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>수상 내역 수준</label>
+      <select id="award">
+        <option value="3">전국/국제 대회 입상</option>
+        <option value="2" selected>주/지역 대회 입상</option>
+        <option value="1">교내 수상</option>
+        <option value="0">해당 없음</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label>희망 지역 (선택, 예: CA / 동부 / 텍사스 등 — 비워두면 전체)</label>
+      <input type="text" id="region" placeholder="비워두면 전체 지역" />
+      <span class="hint">스프레드시트의 '지역' 칼럼 텍스트와 부분 일치로 필터링됩니다.</span>
+    </div>
+
+    <button type="submit" id="submitBtn">매칭 결과 확인하기</button>
+  </form>
+
+  <div id="status"></div>
+
+  <div id="results">
+    <div class="summary">
+      <div class="col-reach"><div class="num" id="cntReach">0</div><div class="lbl">Reach</div></div>
+      <div class="col-target"><div class="num" id="cntTarget">0</div><div class="lbl">Target</div></div>
+      <div class="col-safety"><div class="num" id="cntSafety">0</div><div class="lbl">Safety</div></div>
+    </div>
+
+    <div class="group-title">🔴 Reach — 도전 지원</div>
+    <div id="listReach"></div>
+
+    <div class="group-title">🟡 Target — 적정 지원</div>
+    <div id="listTarget"></div>
+
+    <div class="group-title">🟢 Safety — 안정 지원</div>
+    <div id="listSafety"></div>
+
+    <div class="disclaimer">
+      본 결과는 GPA·표준화시험 점수를 대학별 합격자 중간 50% 데이터와 비교한 <b>참고용 1차 분류</b>이며, 실제 합격 여부를 보장하지 않습니다. EC활동·수상·에세이·추천서 등 정성 요소는 반영되지 않았습니다. 최종 지원 리스트는 반드시 입시 전문가와 상담 후 결정하세요.
+    </div>
+    <div class="cta">📩 정확한 포지셔닝 진단이 필요하다면 <a href="#" target="_top">MS Prep 상담 신청하기</a></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+/* ============================================================
+   설정: 구글 스프레드시트를 "웹에 게시 → CSV"로 게시한 후
+   아래 SHEET_CSV_URL 값에 그 링크를 붙여넣으세요.
+   (파일 → 공유 → 웹에 게시 → 쉼표로 구분된 값(.csv) → 게시 → 링크 복사)
+   ============================================================ */
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTyVNoAUs5JWUDNaiHJo0N_teeqAOeFX6BanmEIW63LvXSX5FlQzoIkWcFwniPvt6vac97jcFftu8DD/pub?output=csv";
+
+const form = document.getElementById('matchForm');
+const statusEl = document.getElementById('status');
+const submitBtn = document.getElementById('submitBtn');
+
+function num(v){
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
+
+// 학생 지표 하나(gpa 또는 시험점수)를 대학의 [하한,상한] 구간과 비교해 -1/0/+1 점수 산출
+function scoreAgainstRange(value, lower, upper){
+  if (value === null || lower === null || upper === null) return null;
+  if (value >= upper) return 1;   // 중간50% 상단 이상 → 강점
+  if (value < lower) return -1;   // 중간50% 하단 미만 → 약점
+  return 0;                        // 구간 내 → 보통
+}
+
+function classify(student, school){
+  const scores = [];
+  const gpaScore = scoreAgainstRange(student.gpa, school.gpaLow, school.gpaHigh);
+  if (gpaScore !== null) scores.push(gpaScore);
+
+  let testScore = null;
+  if (student.sat !== null && school.satLow !== null && school.satHigh !== null){
+    testScore = scoreAgainstRange(student.sat, school.satLow, school.satHigh);
+  } else if (student.act !== null && school.actLow !== null && school.actHigh !== null){
+    testScore = scoreAgainstRange(student.act, school.actLow, school.actHigh);
+  }
+  if (testScore !== null) scores.push(testScore);
+
+  if (scores.length === 0) return null; // 비교할 데이터 자체가 없음
+
+  const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+
+  let tier;
+  if (avg > 0.3) tier = 'safety';
+  else if (avg < -0.3) tier = 'reach';
+  else tier = 'target';
+
+  // 합격률이 매우 낮은 학교는 아무리 성적이 좋아도 'safety'로 분류하지 않음
+  if (school.admitRate !== null && school.admitRate < 10 && tier === 'safety'){
+    tier = 'target';
+  }
+
+  return tier;
+}
+
+function renderList(containerId, items){
+  const el = document.getElementById(containerId);
+  if (items.length === 0){
+    el.innerHTML = '<div class="empty-note">해당 구간에 표시할 학교가 없습니다.</div>';
+    return;
+  }
+  el.innerHTML = items.map(({school, tier}) => `
+    <div class="card ${tier}">
+      <div>
+        <div class="name">${school.name}</div>
+        <div class="meta">GPA ${school.gpaLow ?? '-'}–${school.gpaHigh ?? '-'} · SAT ${school.satLow ?? '-'}–${school.satHigh ?? '-'} · ACT ${school.actLow ?? '-'}–${school.actHigh ?? '-'} · 합격률 ${school.admitRate ?? '-'}%</div>
+        ${school.comment ? `<div class="comment">${school.comment}</div>` : ''}
+      </div>
+      <span class="tag ${tier}">${tier === 'reach' ? 'REACH' : tier === 'target' ? 'TARGET' : 'SAFETY'}</span>
+    </div>
+  `).join('');
+}
+
+form.addEventListener('submit', function(e){
+  e.preventDefault();
+
+  if (SHEET_CSV_URL.indexOf('PASTE_YOUR') === 0){
+    statusEl.textContent = '⚠️ 관리자 설정 필요: 코드 상단의 SHEET_CSV_URL에 구글 시트 CSV 링크를 넣어주세요.';
+    return;
+  }
+
+  const student = {
+    gpa: num(document.getElementById('gpa').value),
+    sat: num(document.getElementById('sat').value),
+    act: num(document.getElementById('act').value),
+  };
+  const regionFilter = document.getElementById('region').value.trim().toLowerCase();
+
+  submitBtn.disabled = true;
+  statusEl.textContent = '대학 데이터를 불러오는 중입니다...';
+  document.getElementById('results').style.display = 'none';
+
+  Papa.parse(SHEET_CSV_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results){
+      submitBtn.disabled = false;
+
+      const schools = results.data.map(row => ({
+        name: row['대학명'],
+        gpaLow: num(row['GPA_하한']),
+        gpaHigh: num(row['GPA_상한']),
+        satLow: num(row['SAT_하한']),
+        satHigh: num(row['SAT_상한']),
+        actLow: num(row['ACT_하한']),
+        actHigh: num(row['ACT_상한']),
+        admitRate: num(row['합격률']),
+        region: (row['지역'] || '').toLowerCase(),
+        comment: row['코멘트'] || '',
+      })).filter(s => s.name);
+
+      const filtered = regionFilter
+        ? schools.filter(s => s.region.includes(regionFilter))
+        : schools;
+
+      const reach = [], target = [], safety = [];
+      filtered.forEach(school => {
+        const tier = classify(student, school);
+        if (tier === 'reach') reach.push({school, tier});
+        else if (tier === 'target') target.push({school, tier});
+        else if (tier === 'safety') safety.push({school, tier});
+        // tier === null 인 경우(비교 데이터 없음)는 결과에서 제외
+      });
+
+      document.getElementById('cntReach').textContent = reach.length;
+      document.getElementById('cntTarget').textContent = target.length;
+      document.getElementById('cntSafety').textContent = safety.length;
+
+      renderList('listReach', reach);
+      renderList('listTarget', target);
+      renderList('listSafety', safety);
+
+      statusEl.textContent = '';
+      document.getElementById('results').style.display = 'block';
+    },
+    error: function(err){
+      submitBtn.disabled = false;
+      statusEl.textContent = '⚠️ 데이터를 불러오지 못했습니다. 스프레드시트 게시 링크(CSV)를 다시 확인해주세요.';
+      console.error(err);
+    }
+  });
+});
+</script>
+</body>
+</html>
