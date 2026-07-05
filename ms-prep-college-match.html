@@ -165,13 +165,50 @@
     font-size:13px;
   }
   .cta a{color:var(--ink);font-weight:700;}
+
+  .ap-rows{display:flex;flex-direction:column;gap:8px;}
+  .ap-row{display:grid;grid-template-columns:1fr 90px 32px;gap:8px;}
+  .ap-row input[type="text"]{font-family:'Inter',sans-serif;}
+  .ap-remove{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:6px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:14px;
+    padding:0;
+  }
+  .ap-add-btn{
+    grid-column:1/-1;
+    background:#fff;
+    border:1px dashed var(--line);
+    color:var(--ink-soft);
+    border-radius:6px;
+    padding:9px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    margin-top:2px;
+  }
+  .warn-badge{
+    display:block;
+    margin-top:5px;
+    font-size:11px;
+    font-family:'Inter',sans-serif;
+    color:#9A5B00;
+    background:#FDF2E0;
+    border-radius:5px;
+    padding:4px 8px;
+    line-height:1.5;
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="eyebrow">MS Prep · College Match Report</div>
   <h1>내 성적으로 지원 가능한 대학 확인하기</h1>
-  <div class="sub">GPA와 표준화시험 점수를 입력하면 Reach / Target / Safety로 분류된 리스트를 보여드립니다. EC활동과 수상 내역은 숫자로 환산할 수 없는 정성 평가 영역이라, 아래 결과는 참고용 1차 분류입니다.</div>
+  <div class="sub">GPA, 표준화시험, AP 점수를 종합해 Reach / Target / Safety로 분류된 리스트를 보여드립니다. EC활동과 수상 내역은 보조 지표로 약하게 반영되며, 지원 전공이 CS/공학처럼 학교 내에서 특히 경쟁적인 경우 별도로 표시해드립니다.</div>
 
   <form id="matchForm">
     <div class="field">
@@ -217,6 +254,24 @@
     </div>
 
     <div class="field full">
+      <label>지원 희망 전공</label>
+      <select id="major">
+        <option value="stem">컴퓨터공학(CS)/공학</option>
+        <option value="science">자연과학(생물·화학·물리·수학)</option>
+        <option value="business">경영/경제</option>
+        <option value="humanities">인문사회</option>
+        <option value="other">기타</option>
+      </select>
+      <span class="hint">CS·공학은 일부 학교에서 학교 평균보다 훨씬 경쟁적일 수 있어, 해당하는 경우 카드에 경고 배지가 표시됩니다.</span>
+    </div>
+
+    <div class="field full">
+      <label>AP 시험 (선택, 응시한 과목만 추가)</label>
+      <div class="ap-rows" id="apRows"></div>
+      <button type="button" class="ap-add-btn" id="apAddBtn">+ AP 과목 추가</button>
+    </div>
+
+    <div class="field full">
       <label>희망 지역 (선택, 예: CA / 동부 / 텍사스 등 — 비워두면 전체)</label>
       <input type="text" id="region" placeholder="비워두면 전체 지역" />
       <span class="hint">스프레드시트의 '지역' 칼럼 텍스트와 부분 일치로 필터링됩니다.</span>
@@ -244,7 +299,7 @@
     <div id="listSafety"></div>
 
     <div class="disclaimer">
-      본 결과는 GPA·표준화시험 점수를 대학별 합격자 중간 50% 데이터와 비교한 <b>참고용 1차 분류</b>이며, 실제 합격 여부를 보장하지 않습니다. EC활동·수상·에세이·추천서 등 정성 요소는 반영되지 않았습니다. 최종 지원 리스트는 반드시 입시 전문가와 상담 후 결정하세요.
+      본 결과는 GPA·표준화시험·AP 점수를 대학별 합격자 중간 50% 데이터와 비교하고, EC·수상을 보조 지표로 반영한 <b>참고용 1차 분류</b>이며, 실제 합격 여부를 보장하지 않습니다. 전공별 경쟁도는 정확한 수치가 아닌 <b>일반적으로 알려진 경쟁도 등급</b>을 기반으로 하며, 에세이·추천서 등 다른 정성 요소는 반영되지 않았습니다. 최종 지원 리스트는 반드시 입시 전문가와 상담 후 결정하세요.
     </div>
     <div class="cta">📩 정확한 포지셔닝 진단이 필요하다면 <a href="#" target="_top">MS Prep 상담 신청하기</a></div>
   </div>
@@ -262,6 +317,41 @@ const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTyVNoAUs
 const form = document.getElementById('matchForm');
 const statusEl = document.getElementById('status');
 const submitBtn = document.getElementById('submitBtn');
+const apRowsEl = document.getElementById('apRows');
+const apAddBtn = document.getElementById('apAddBtn');
+
+let apRowCount = 0;
+function addApRow(){
+  apRowCount++;
+  const id = 'ap_' + apRowCount;
+  const row = document.createElement('div');
+  row.className = 'ap-row';
+  row.dataset.rowId = id;
+  row.innerHTML = `
+    <input type="text" placeholder="예: AP Calculus BC" class="ap-subject" />
+    <select class="ap-score">
+      <option value="">점수</option>
+      <option value="5">5</option>
+      <option value="4">4</option>
+      <option value="3">3</option>
+      <option value="2">2</option>
+      <option value="1">1</option>
+    </select>
+    <button type="button" class="ap-remove" title="삭제">×</button>
+  `;
+  row.querySelector('.ap-remove').addEventListener('click', () => row.remove());
+  apRowsEl.appendChild(row);
+}
+apAddBtn.addEventListener('click', addApRow);
+addApRow(); // 기본 1행 표시
+
+function getApScores(){
+  return Array.from(apRowsEl.querySelectorAll('.ap-row')).map(row => {
+    const subject = row.querySelector('.ap-subject').value.trim();
+    const score = parseInt(row.querySelector('.ap-score').value, 10);
+    return { subject, score: isNaN(score) ? null : score };
+  }).filter(a => a.subject && a.score !== null);
+}
 
 function num(v){
   const n = parseFloat(v);
@@ -276,10 +366,27 @@ function scoreAgainstRange(value, lower, upper){
   return 0;                        // 구간 내 → 보통
 }
 
+// AP 점수 평균을 -1/0/+1 신호로 변환 (5점 다수면 강점, 3점 이하 다수면 약점)
+function apSignal(apScores){
+  if (!apScores || apScores.length === 0) return null;
+  const avg = apScores.reduce((a,b) => a + b.score, 0) / apScores.length;
+  if (avg >= 4.3) return 1;
+  if (avg < 3.3) return -1;
+  return 0;
+}
+
+// EC/수상 티어(0~3)를 약한 보조 신호로 변환 (가중치는 호출부에서 0.5로 축소)
+function softSignal(tier){
+  if (tier === 3) return 1;
+  if (tier === 0) return -1;
+  return 0;
+}
+
 function classify(student, school){
-  const scores = [];
+  const weighted = []; // [value, weight]
+
   const gpaScore = scoreAgainstRange(student.gpa, school.gpaLow, school.gpaHigh);
-  if (gpaScore !== null) scores.push(gpaScore);
+  if (gpaScore !== null) weighted.push([gpaScore, 1]);
 
   let testScore = null;
   if (student.sat !== null && school.satLow !== null && school.satHigh !== null){
@@ -287,11 +394,20 @@ function classify(student, school){
   } else if (student.act !== null && school.actLow !== null && school.actHigh !== null){
     testScore = scoreAgainstRange(student.act, school.actLow, school.actHigh);
   }
-  if (testScore !== null) scores.push(testScore);
+  if (testScore !== null) weighted.push([testScore, 1]);
 
-  if (scores.length === 0) return null; // 비교할 데이터 자체가 없음
+  const apSig = apSignal(student.apScores);
+  if (apSig !== null) weighted.push([apSig, 0.7]);
 
-  const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+  // 핵심 지표(GPA/시험/AP)가 하나도 없으면 비교 불가
+  if (weighted.length === 0) return { tier: null, majorWarn: false };
+
+  // EC/수상은 약한 보조 신호로만 반영 (핵심 지표가 최소 1개 있을 때만)
+  weighted.push([softSignal(student.ec), 0.4]);
+  weighted.push([softSignal(student.award), 0.4]);
+
+  const totalWeight = weighted.reduce((a, [, w]) => a + w, 0);
+  const avg = weighted.reduce((a, [v, w]) => a + v * w, 0) / totalWeight;
 
   let tier;
   if (avg > 0.3) tier = 'safety';
@@ -303,7 +419,16 @@ function classify(student, school){
     tier = 'target';
   }
 
-  return tier;
+  // 전공 경쟁도 반영: STEM 지원 + 학교의 STEM 전공이 '높음'으로 표시된 경우 한 단계 하향
+  let majorWarn = false;
+  const isStemMajor = (student.major === 'stem' || student.major === 'science');
+  if (isStemMajor && school.stemCompetitiveness === '높음'){
+    majorWarn = true;
+    if (tier === 'safety') tier = 'target';
+    else if (tier === 'target') tier = 'reach';
+  }
+
+  return { tier, majorWarn };
 }
 
 function renderList(containerId, items){
@@ -312,12 +437,13 @@ function renderList(containerId, items){
     el.innerHTML = '<div class="empty-note">해당 구간에 표시할 학교가 없습니다.</div>';
     return;
   }
-  el.innerHTML = items.map(({school, tier}) => `
+  el.innerHTML = items.map(({school, tier, majorWarn}) => `
     <div class="card ${tier}">
       <div>
         <div class="name">${school.name}</div>
         <div class="meta">GPA ${school.gpaLow ?? '-'}–${school.gpaHigh ?? '-'} · SAT ${school.satLow ?? '-'}–${school.satHigh ?? '-'} · ACT ${school.actLow ?? '-'}–${school.actHigh ?? '-'} · 합격률 ${school.admitRate ?? '-'}%</div>
         ${school.comment ? `<div class="comment">${school.comment}</div>` : ''}
+        ${majorWarn ? `<span class="warn-badge">⚠️ 이 학교는 선택하신 전공(CS/공학 등)이 학교 평균보다 훨씬 경쟁적인 것으로 알려져 있습니다. 실제 체감 난이도는 표시된 등급보다 높을 수 있습니다.</span>` : ''}
       </div>
       <span class="tag ${tier}">${tier === 'reach' ? 'REACH' : tier === 'target' ? 'TARGET' : 'SAFETY'}</span>
     </div>
@@ -336,6 +462,10 @@ form.addEventListener('submit', function(e){
     gpa: num(document.getElementById('gpa').value),
     sat: num(document.getElementById('sat').value),
     act: num(document.getElementById('act').value),
+    ec: num(document.getElementById('ec').value),
+    award: num(document.getElementById('award').value),
+    major: document.getElementById('major').value,
+    apScores: getApScores(),
   };
   const regionFilter = document.getElementById('region').value.trim().toLowerCase();
 
@@ -361,6 +491,7 @@ form.addEventListener('submit', function(e){
         admitRate: num(row['합격률']),
         region: (row['지역'] || '').toLowerCase(),
         comment: row['코멘트'] || '',
+        stemCompetitiveness: (row['STEM전공_경쟁도'] || '').trim(),
       })).filter(s => s.name);
 
       const filtered = regionFilter
@@ -369,10 +500,10 @@ form.addEventListener('submit', function(e){
 
       const reach = [], target = [], safety = [];
       filtered.forEach(school => {
-        const tier = classify(student, school);
-        if (tier === 'reach') reach.push({school, tier});
-        else if (tier === 'target') target.push({school, tier});
-        else if (tier === 'safety') safety.push({school, tier});
+        const { tier, majorWarn } = classify(student, school);
+        if (tier === 'reach') reach.push({school, tier, majorWarn});
+        else if (tier === 'target') target.push({school, tier, majorWarn});
+        else if (tier === 'safety') safety.push({school, tier, majorWarn});
         // tier === null 인 경우(비교 데이터 없음)는 결과에서 제외
       });
 
